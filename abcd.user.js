@@ -1,18 +1,17 @@
-```javascript
 // ==UserScript==
 // @name         Auto Scroll and Click Target Button
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      1.0
 // @description  Tự động cuộn xuống và click vào nút tương ứng nếu xuất hiện trên trang
 // @author       You
 // @match        *://*/*
 // @grant        none
 // ==/UserScript==
 
-(function () {
+(function() {
     'use strict';
 
-    // Các selector cần tìm, ưu tiên từ trên xuống dưới
+    // Danh sách các selector cần tìm kiếm (ưu tiên từ trên xuống dưới)
     const selectors = [
         '.trade-btn-clf-container',
         '.trade-btn-clf',
@@ -22,101 +21,55 @@
         '#trade-d-btn__content'
     ];
 
-    let clicked = false;
+    function findAndClickTarget() {
+        let targetElement = null;
 
-    function findTarget() {
+        // Lặp qua các selector để tìm phần tử xuất hiện trên trang
         for (const selector of selectors) {
-            try {
-                const element = document.querySelector(selector);
-
-                if (element) {
-                    return element;
-                }
-            } catch (error) {
-                console.error(
-                    '[Tampermonkey] Selector lỗi:',
-                    selector,
-                    error
-                );
+            const el = document.querySelector(selector);
+            if (el) {
+                targetElement = el;
+                break;
             }
         }
 
-        return null;
-    }
+        if (targetElement) {
+            console.log('[Tampermonkey] Đã tìm thấy nút:', targetElement);
 
-    function clickTarget(element) {
-        if (!element || clicked) {
-            return;
-        }
+            // 1. Cuộn smooth đến vị trí của nút
+            targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-        clicked = true;
+            // 2. Chờ một khoảng thời gian ngắn để quá trình cuộn hoàn tất rồi click
+            setTimeout(() => {
+                targetElement.click();
 
-        console.log(
-            '[Tampermonkey] Đã tìm thấy:',
-            element
-        );
-
-        // Cuộn tới nút
-        element.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center'
-        });
-
-        // Chờ cuộn xong rồi click
-        setTimeout(() => {
-            // Click thông thường
-            element.click();
-
-            // Click mô phỏng
-            element.dispatchEvent(
-                new MouseEvent('click', {
+                // Trường hợp nút là dạng SVG hoặc nằm lót bên dưới, kích hoạt sự kiện click mô phỏng
+                const clickEvent = new MouseEvent('click', {
                     view: window,
                     bubbles: true,
                     cancelable: true
-                })
-            );
+                });
+                targetElement.dispatchEvent(clickEvent);
 
-            console.log(
-                '[Tampermonkey] Đã click nút!'
-            );
-        }, 800);
-    }
+                console.log('[Tampermonkey] Đã thực hiện click thành công!');
+            }, 800); // 800ms chờ cuộn trang
 
-    function findAndClick() {
-        if (clicked) {
             return true;
         }
-
-        const target = findTarget();
-
-        if (target) {
-            clickTarget(target);
-            return true;
-        }
-
         return false;
     }
 
-    // Kiểm tra ngay lập tức
-    findAndClick();
-
-    // Kiểm tra mỗi 500ms
+    // Lặp lại việc kiểm tra vì một số trang web tải nút bằng AJAX/JavaScript chậm
+    let attempts = 0;
+    const maxAttempts = 20; // Thử tối đa 20 lần (tương đương 10 giây)
+    
     const interval = setInterval(() => {
-        if (findAndClick()) {
+        attempts++;
+        const success = findAndClickTarget();
+
+        if (success || attempts >= maxAttempts) {
             clearInterval(interval);
         }
     }, 500);
 
-    // Dừng sau 20 giây nếu không tìm thấy
-    setTimeout(() => {
-        clearInterval(interval);
-
-        if (!clicked) {
-            console.log(
-                '[Tampermonkey] Không tìm thấy nút sau 20 giây.'
-            );
-        }
-    }, 20000);
-
 })();
-```
