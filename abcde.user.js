@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         Auto Scroll and Click Target Button
+// @name         gtraffic
 // @namespace    http://tampermonkey.net/
 // @version      1.0
 // @description  Tự động cuộn xuống và click vào nút tương ứng nếu xuất hiện trên trang
