@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Auto Click Complete - Cryptolinkforearn
 // @namespace    http://tampermonkey.net/
-// @version      2.3
-// @description  Click nút Xác Minh và nút Continue (kể cả trong iFrame)
+// @version      2.4
+// @description  Click nút Xác Minh, Continue (kể cả trong iFrame) và Confirm & Claim
 // @match        https://pub.cryptolinkforearn.com/*
 // @grant        none
 // @run-at       document-start
@@ -13,6 +13,7 @@
 
     let verifyClicked = false;
     let continueClicked = false;
+    let confirmClaimClicked = false;
 
     // Hàm giả lập click mạnh mẽ hơn
     function triggerClick(el) {
@@ -74,9 +75,30 @@
         }
     }
 
+    // 3. TÌM NÚT CONFIRM & CLAIM REWARD
+    function autoClickConfirmClaim() {
+        if (confirmClaimClicked) return;
+
+        const buttons = document.querySelectorAll('button');
+        for (const button of buttons) {
+            const text = (button.innerText || button.textContent || '').trim().toLowerCase();
+            if (text.includes('confirm & claim reward') && !button.disabled) {
+                const style = getComputedStyle(button);
+                if (style.display !== 'none' && style.visibility !== 'hidden') {
+                    console.log('[AutoClick] Click nút Confirm & Claim Reward');
+                    confirmClaimClicked = true;
+                    triggerClick(button);
+                    setTimeout(() => { confirmClaimClicked = false; }, 3000);
+                    break;
+                }
+            }
+        }
+    }
+
     // Tự động quét liên tục
     setInterval(() => {
         autoClickVerify();
         autoClickContinue();
+        autoClickConfirmClaim();
     }, 500);
 })();
