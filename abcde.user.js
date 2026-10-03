@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         gtraffic
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Tự động cuộn xuống và click vào nút tương ứng nếu xuất hiện trên trang
 // @author       You
 // @match        *://*/*
@@ -18,7 +18,13 @@
         '.trade-d-btn-container',
         '.trade-d-btn',
         '#trade-btn-clf__content',
-        '#trade-d-btn__content'
+        '#trade-d-btn__content',
+        // Thêm các selector cho mẫu nút mới trong ảnh
+        '.trade-btn-container',
+        '.trade-btn',
+        '#avt-btn',
+        '#trade-btn_arrow',
+        '#trade-btn__content'
     ];
 
     function findAndClickTarget() {
