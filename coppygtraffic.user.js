@@ -1,13 +1,13 @@
 // ==UserScript==
 // @name         Gtraffic Click to Copy + Native Link Open
 // @namespace    http://tampermonkey.net/
-// @version      4.2
-// @description  Giả lập chuẩn thao tác mở liên kết tab mới để kích hoạt nút lấy mã
+// @version      5.0
+// @description  Mở tab mới chuẩn trình duyệt
 // @author       You
 // @match        https://direct.gtraffic.io/*
 // @match        https://gtraffic.io/*
-// @downloadURL  https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/script.user.js
-// @updateURL    https://raw.githubusercontent.com/USERNAME/REPOSITORY/main/script.user.js
+// @downloadURL  https://raw.githubusercontent.com/khongbietcode13/a/main/coppygtraffic.user.js
+// @updateURL    https://raw.githubusercontent.com/khongbietcode13/a/main/coppygtraffic.user.js
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
