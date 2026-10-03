@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Gtraffic Text Selection + Fixed Copy
+// @name         Gtraffic Click to Copy + Native Link Open
 // @namespace    http://tampermonkey.net/
-// @version      3.1
-// @description  Cho phép bôi đen và thêm nút Copy cố định bên cạnh ô chữ
+// @version      4.2
+// @description  Giả lập chuẩn thao tác mở liên kết tab mới để kích hoạt nút lấy mã
 // @author       You
 // @match        https://direct.gtraffic.io/*
 // @match        https://gtraffic.io/*
@@ -14,240 +14,138 @@
     'use strict';
 
     // ==============================
-    // CHO PHÉP BÔI ĐEN
+    // 1. CSS BÔI ĐEN + HOVER
     // ==============================
-
     const style = document.createElement('style');
-
     style.textContent = `
-        *,
-        *::before,
-        *::after {
+        *, *::before, *::after {
             -webkit-user-select: text !important;
             -moz-user-select: text !important;
             -ms-user-select: text !important;
             user-select: text !important;
         }
 
-        .gt-copy-container {
-            position: relative !important;
-        }
-
-        .gt-copy-btn {
-            position: absolute !important;
-            left: calc(100% + 8px) !important;
-            top: 50% !important;
-            transform: translateY(-50%) !important;
-
-            z-index: 999999 !important;
-
-            padding: 4px 9px !important;
-
-            border: 1px solid #cccccc !important;
-            border-radius: 4px !important;
-
-            background: white !important;
-            color: #333 !important;
-
-            font-size: 11px !important;
-            font-family: Arial, sans-serif !important;
-
+        .gt-clickable-box {
             cursor: pointer !important;
-
-            white-space: nowrap !important;
-
-            box-shadow: 0 1px 4px rgba(0,0,0,0.20) !important;
+            transition: background-color 0.2s, border-color 0.2s !important;
         }
 
-        .gt-copy-btn:hover {
-            background: #eeeeee !important;
+        .gt-clickable-box:hover {
+            background-color: #f0fdf4 !important;
+            border-color: #22c55e !important;
         }
 
-        .gt-copy-btn.copied {
-            background: #e4f7e4 !important;
-            color: green !important;
+        .gt-copied-anim {
+            background-color: #dcfce7 !important;
+            outline: 2px solid #16a34a !important;
+        }
+
+        /* Đảm bảo thẻ a giả lập không làm hỏng giao diện */
+        .gt-native-link {
+            color: inherit !important;
+            text-decoration: none !important;
+            display: inline-block !important;
+            width: 100% !important;
         }
     `;
-
     document.head.appendChild(style);
 
-
     // ==============================
-    // XÓA CLASS CHẶN BÔI ĐEN
+    // 2. XÓA CLASS CHẶN BÔI ĐEN
     // ==============================
-
     function removeUnselectable() {
-
-        document.querySelectorAll('.unselectable').forEach(function (el) {
+        document.querySelectorAll('.unselectable').forEach(el => {
             el.classList.remove('unselectable');
         });
-
     }
 
-
     // ==============================
-    // COPY TEXT
+    // 3. XỬ LÝ CLICK & COPY & CHUYỂN HUỚNG
     // ==============================
-
-    function copyText(text, button) {
-
-        if (!text) return;
-
-        navigator.clipboard.writeText(text)
-            .then(function () {
-
-                button.textContent = '✓ Copied';
-                button.classList.add('copied');
-
-                setTimeout(function () {
-                    button.textContent = '📋 Copy';
-                    button.classList.remove('copied');
-                }, 1000);
-
-            })
-            .catch(function () {
-
-                const textarea = document.createElement('textarea');
-
-                textarea.value = text;
-                textarea.style.position = 'fixed';
-                textarea.style.left = '-9999px';
-
-                document.body.appendChild(textarea);
-
-                textarea.focus();
-                textarea.select();
-
-                document.execCommand('copy');
-
-                textarea.remove();
-
-                button.textContent = '✓ Copied';
-                button.classList.add('copied');
-
-                setTimeout(function () {
-                    button.textContent = '📋 Copy';
-                    button.classList.remove('copied');
-                }, 1000);
-
-            });
-
-    }
-
-
-    // ==============================
-    // LẤY TEXT CỦA Ô
-    // ==============================
-
-    function getBoxText(box) {
-
-        // Tạo bản clone để không lấy chữ của nút Copy
-        const clone = box.cloneNode(true);
-
-        const button = clone.querySelector('.gt-copy-btn');
-
-        if (button) {
-            button.remove();
+    function handleBoxClick(box, e) {
+        // Nếu người dùng đang quét/bôi đen chữ thì giữ nguyên không nhảy tab
+        const selection = window.getSelection();
+        if (selection.toString().length > 0) {
+            return;
         }
 
-        return (clone.innerText || clone.textContent || '').trim();
+        const text = (box.innerText || box.textContent || '').trim();
+        if (!text) return;
+
+        // Copy văn bản
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text);
+        } else {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.left = '-9999px';
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            textarea.remove();
+        }
+
+        // Hiệu ứng nhấp nháy
+        box.classList.add('gt-copied-anim');
+        setTimeout(() => box.classList.remove('gt-copied-anim'), 400);
+
+        // Chuẩn hóa URL
+        let finalUrl = text;
+        if (!/^https?:\/\//i.test(finalUrl)) {
+            finalUrl = 'https://' + finalUrl;
+        }
+
+        // Tạo thẻ <a> giả lập sự kiện Click gốc của trình duyệt
+        const hiddenLink = document.createElement('a');
+        hiddenLink.href = finalUrl;
+        hiddenLink.target = '_blank';
+        hiddenLink.rel = 'noopener noreferrer';
+        
+        document.body.appendChild(hiddenLink);
+        
+        // Kích hoạt click chuẩn trình duyệt (Browser Native Click Event)
+        hiddenLink.click();
+        
+        hiddenLink.remove();
     }
 
-
     // ==============================
-    // THÊM NÚT COPY
+    // 4. GẮN SỰ KIỆN CHO CÁC Ô
     // ==============================
-
-    function addCopyButtons() {
-
+    function setupBoxes() {
         removeUnselectable();
 
-        // Bắt cả 2 kiểu giao diện
         const boxes = document.querySelectorAll(`
             div.bg-slate-50.border.border-slate-300.flex.items-center.justify-between,
             div.bg-slate-50.border.border-slate-300.border-l-4.flex.items-center.justify-between
         `);
 
+        boxes.forEach(box => {
+            if (box.dataset.gtClickAdded === 'true') return;
 
-        boxes.forEach(function (box) {
+            box.dataset.gtClickAdded = 'true';
+            box.classList.add('gt-clickable-box');
 
-            // Đã có nút thì không thêm lại
-            if (box.querySelector('.gt-copy-btn')) {
-                return;
-            }
-
-
-            // Chỉ xử lý các ô có text
-            const text = getBoxText(box);
-
-            if (!text) {
-                return;
-            }
-
-
-            // Đặt container làm mốc cho nút
-            box.classList.add('gt-copy-container');
-
-
-            // ==========================
-            // TẠO NÚT
-            // ==========================
-
-            const button = document.createElement('button');
-
-            button.type = 'button';
-            button.className = 'gt-copy-btn';
-            button.textContent = '📋 Copy';
-
-
-            // ==========================
-            // CLICK COPY
-            // ==========================
-
-            button.addEventListener('click', function (e) {
-
-                e.preventDefault();
-                e.stopPropagation();
-
-                const textToCopy = getBoxText(box);
-
-                copyText(textToCopy, button);
-
+            box.addEventListener('click', function (e) {
+                handleBoxClick(box, e);
             });
-
-
-            box.appendChild(button);
-
         });
-
     }
 
-
     // ==============================
-    // CHẠY LẦN ĐẦU
+    // 5. THEO DÕI DOM DỘNG
     // ==============================
+    setupBoxes();
 
-    addCopyButtons();
-
-
-    // ==============================
-    // THEO DÕI TRANG LOAD ĐỘNG
-    // ==============================
-
-    const observer = new MutationObserver(function () {
-
-        addCopyButtons();
-
+    const observer = new MutationObserver(() => {
+        setupBoxes();
     });
 
-
     if (document.body) {
-
         observer.observe(document.body, {
             childList: true,
             subtree: true
         });
-
     }
-
 })();
