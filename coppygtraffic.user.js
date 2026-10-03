@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         Gtraffic Click to Copy + Native Link Open
+// @name         Gtraffic Text Selection + Fixed Copy
 // @namespace    http://tampermonkey.net/
-// @version      4.2
-// @description  Giả lập chuẩn thao tác mở liên kết tab mới để kích hoạt nút lấy mã
+// @version      3.1
+// @description  Cho phép bôi đen và thêm nút Copy cố định bên cạnh ô chữ
 // @author       You
 // @match        https://direct.gtraffic.io/*
 // @match        https://gtraffic.io/*
