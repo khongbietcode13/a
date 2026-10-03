@@ -1,23 +1,25 @@
 // ==UserScript==
-// @name         Gtraffic Click to Copy + Native Link Open
+// @name         Gtraffic Auto Copy + Auto Open
 // @namespace    http://tampermonkey.net/
-// @version      5.0
-// @description  Mở tab mới chuẩn trình duyệt
+// @version      7.0
+// @description  Tự động copy và mở link Gtraffic
 // @author       You
 // @match        https://direct.gtraffic.io/*
 // @match        https://gtraffic.io/*
 // @downloadURL  https://raw.githubusercontent.com/khongbietcode13/a/main/coppygtraffic.user.js
 // @updateURL    https://raw.githubusercontent.com/khongbietcode13/a/main/coppygtraffic.user.js
-// @grant        none
+// @grant        GM_openInTab
 // @run-at       document-end
 // ==/UserScript==
+
 (function () {
     'use strict';
 
     // ==============================
-    // 1. CSS BÔI ĐEN + HOVER
+    // CSS
     // ==============================
     const style = document.createElement('style');
+
     style.textContent = `
         *, *::before, *::after {
             -webkit-user-select: text !important;
@@ -40,19 +42,13 @@
             background-color: #dcfce7 !important;
             outline: 2px solid #16a34a !important;
         }
-
-        /* Đảm bảo thẻ a giả lập không làm hỏng giao diện */
-        .gt-native-link {
-            color: inherit !important;
-            text-decoration: none !important;
-            display: inline-block !important;
-            width: 100% !important;
-        }
     `;
+
     document.head.appendChild(style);
 
+
     // ==============================
-    // 2. XÓA CLASS CHẶN BÔI ĐEN
+    // XÓA UNSELECTABLE
     // ==============================
     function removeUnselectable() {
         document.querySelectorAll('.unselectable').forEach(el => {
@@ -60,93 +56,287 @@
         });
     }
 
+
     // ==============================
-    // 3. XỬ LÝ CLICK & COPY & CHUYỂN HUỚNG
+    // KIỂM TRA CÓ PHẢI LINK KHÔNG
     // ==============================
-    function handleBoxClick(box, e) {
-        // Nếu người dùng đang quét/bôi đen chữ thì giữ nguyên không nhảy tab
-        const selection = window.getSelection();
-        if (selection.toString().length > 0) {
-            return;
+    function isValidLink(text) {
+
+        if (!text) return false;
+
+        text = text.trim();
+
+        // http://
+        if (/^https?:\/\/\S+$/i.test(text)) {
+            return true;
         }
 
-        const text = (box.innerText || box.textContent || '').trim();
-        if (!text) return;
+        // domain kiểu betilive4d.net
+        if (/^(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/\S*)?$/i.test(text)) {
+            return true;
+        }
 
-        // Copy văn bản
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            navigator.clipboard.writeText(text);
+        return false;
+    }
+
+
+    // ==============================
+    // CHUẨN HÓA LINK
+    // ==============================
+    function normalizeUrl(text) {
+
+        text = text.trim();
+
+        if (!/^https?:\/\//i.test(text)) {
+            text = 'https://' + text;
+        }
+
+        return text;
+    }
+
+
+    // ==============================
+    // COPY
+    // ==============================
+    function copyText(text) {
+
+        if (navigator.clipboard &&
+            navigator.clipboard.writeText) {
+
+            navigator.clipboard.writeText(text).catch(() => {});
+
         } else {
+
             const textarea = document.createElement('textarea');
+
             textarea.value = text;
             textarea.style.position = 'fixed';
             textarea.style.left = '-9999px';
+
             document.body.appendChild(textarea);
+
             textarea.select();
-            document.execCommand('copy');
+
+            try {
+                document.execCommand('copy');
+            } catch (e) {}
+
             textarea.remove();
         }
-
-        // Hiệu ứng nhấp nháy
-        box.classList.add('gt-copied-anim');
-        setTimeout(() => box.classList.remove('gt-copied-anim'), 400);
-
-        // Chuẩn hóa URL
-        let finalUrl = text;
-        if (!/^https?:\/\//i.test(finalUrl)) {
-            finalUrl = 'https://' + finalUrl;
-        }
-
-        // Tạo thẻ <a> giả lập sự kiện Click gốc của trình duyệt
-        const hiddenLink = document.createElement('a');
-        hiddenLink.href = finalUrl;
-        hiddenLink.target = '_blank';
-        hiddenLink.rel = 'noopener noreferrer';
-        
-        document.body.appendChild(hiddenLink);
-        
-        // Kích hoạt click chuẩn trình duyệt (Browser Native Click Event)
-        hiddenLink.click();
-        
-        hiddenLink.remove();
     }
 
+
     // ==============================
-    // 4. GẮN SỰ KIỆN CHO CÁC Ô
+    // MỞ TAB BẰNG TAMPERMONKEY
     // ==============================
-    function setupBoxes() {
+    function openTab(text) {
+
+        const url = normalizeUrl(text);
+
+        try {
+
+            GM_openInTab(url, {
+                active: true,
+                insert: true,
+                setParent: true
+            });
+
+        } catch (error) {
+
+            // Fallback
+            const link = document.createElement('a');
+
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+
+            document.body.appendChild(link);
+
+            link.click();
+
+            link.remove();
+        }
+    }
+
+
+    // ==============================
+    // XỬ LÝ LINK
+    // ==============================
+    function processBox(box) {
+
+        if (!box) return;
+
+        // Đã xử lý
+        if (box.dataset.gtProcessed === 'true') {
+            return;
+        }
+
+        const text = (
+            box.innerText ||
+            box.textContent ||
+            ''
+        ).trim();
+
+        // Không phải link
+        if (!isValidLink(text)) {
+            return;
+        }
+
+        // Đánh dấu ngay
+        box.dataset.gtProcessed = 'true';
+
+        box.classList.add('gt-clickable-box');
+
+
+        // ==============================
+        // COPY
+        // ==============================
+        copyText(text);
+
+
+        // ==============================
+        // HIỆU ỨNG
+        // ==============================
+        box.classList.add('gt-copied-anim');
+
+        setTimeout(() => {
+            box.classList.remove('gt-copied-anim');
+        }, 500);
+
+
+        // ==============================
+        // TỰ MỞ TAB
+        // ==============================
+        console.log(
+            '[Gtraffic Auto Open]',
+            text
+        );
+
+        openTab(text);
+    }
+
+
+    // ==============================
+    // TÌM LINK
+    // ==============================
+    function scanPage() {
+
         removeUnselectable();
 
+
+        // --------------------------------
+        // Cách 1: selector box cũ
+        // --------------------------------
         const boxes = document.querySelectorAll(`
             div.bg-slate-50.border.border-slate-300.flex.items-center.justify-between,
             div.bg-slate-50.border.border-slate-300.border-l-4.flex.items-center.justify-between
         `);
 
         boxes.forEach(box => {
-            if (box.dataset.gtClickAdded === 'true') return;
+            processBox(box);
+        });
 
-            box.dataset.gtClickAdded = 'true';
-            box.classList.add('gt-clickable-box');
 
-            box.addEventListener('click', function (e) {
-                handleBoxClick(box, e);
-            });
+        // --------------------------------
+        // Cách 2: tìm mọi div có text là domain
+        // --------------------------------
+        const allDivs = document.querySelectorAll('div');
+
+        allDivs.forEach(div => {
+
+            // Bỏ qua div có quá nhiều phần tử con
+            // để tránh lấy nhầm cả khối hướng dẫn
+            if (div.children.length > 2) {
+                return;
+            }
+
+            const text = (
+                div.innerText ||
+                div.textContent ||
+                ''
+            ).trim();
+
+            if (!isValidLink(text)) {
+                return;
+            }
+
+            processBox(div);
         });
     }
 
+
     // ==============================
-    // 5. THEO DÕI DOM DỘNG
+    // CLICK THỦ CÔNG VẪN HOẠT ĐỘNG
     // ==============================
-    setupBoxes();
+    document.addEventListener('click', function (e) {
+
+        let box = e.target.closest('.gt-clickable-box');
+
+        if (!box) {
+            return;
+        }
+
+        const selection = window.getSelection();
+
+        if (selection && selection.toString().length > 0) {
+            return;
+        }
+
+        const text = (
+            box.innerText ||
+            box.textContent ||
+            ''
+        ).trim();
+
+        if (!isValidLink(text)) {
+            return;
+        }
+
+        copyText(text);
+        openTab(text);
+
+    }, true);
+
+
+    // ==============================
+    // CHẠY LẦN ĐẦU
+    // ==============================
+    scanPage();
+
+
+    // ==============================
+    // THEO DÕI AJAX / DOM
+    // ==============================
+    let scanTimer = null;
 
     const observer = new MutationObserver(() => {
-        setupBoxes();
+
+        if (scanTimer) {
+            clearTimeout(scanTimer);
+        }
+
+        scanTimer = setTimeout(() => {
+            scanPage();
+        }, 100);
+
     });
 
+
     if (document.body) {
+
         observer.observe(document.body, {
             childList: true,
             subtree: true
         });
+
     }
+
+
+    // ==============================
+    // QUÉT ĐỊNH KỲ
+    // ==============================
+    setInterval(() => {
+        scanPage();
+    }, 1000);
+
 })();
