@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Auto Click Lấy Link Gtraffic
 // @namespace    http://tampermonkey.net/
-// @version      1.0
+// @version      1.1
 // @description  Tự động click nút Lấy Link trên gtraffic.io và direct.gtraffic.io trafficso1.com
 // @match        https://gtraffic.io/*
 // @match        https://direct.gtraffic.io/*
