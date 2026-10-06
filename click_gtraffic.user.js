@@ -5,6 +5,7 @@
 // @description  Tự động click nút Lấy Link trên gtraffic.io và direct.gtraffic.io
 // @match        https://gtraffic.io/*
 // @match        https://direct.gtraffic.io/*
+//@mactch        https://trafficso1.com/*
 // @grant        none
 // ==/UserScript==
 
