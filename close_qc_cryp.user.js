@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Auto Close Ads - CryptoLinkForEarn
 // @namespace    http://tampermonkey.net/
-// @version      3.1
+// @version      3.2
 // @description  Tự động đóng quảng cáo CryptoLinkForEarn & Phím tắt Alt+G, Alt+D, Alt+N mở nhiệm vụ
 // @author       You
 // @match        https://cryptolinkforearn.com/*
