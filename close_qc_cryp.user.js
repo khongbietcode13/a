@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Auto Close Ads - CryptoLinkForEarn
 // @namespace    http://tampermonkey.net/
-// @version      3.2
-// @description  Tự động đóng quảng cáo CryptoLinkForEarn & Phím tắt Alt+G, Alt+D, Alt+N mở nhiệm vụ
+// @version      3.3
+// @description  Tự động đóng quảng cáo CryptoLinkForEarn & Phím tắt Alt+1, Alt+2, Alt+3 mở nhiệm vụ
 // @author       You
 // @match        https://cryptolinkforearn.com/*
 // @match        https://*.cryptolinkforearn.com/*
@@ -14,7 +14,7 @@
     'use strict';
 
     // ==========================================
-    // 1. TÍNH NĂNG PHÍM TẮT MỞ LINK NHIỆM VỤ (ALT + G, D, N)
+    // 1. TÍNH NĂNG PHÍM TẮT MỞ LINK NHIỆM VỤ (ALT + 1, 2, 3)
     // ==========================================
     function openTaskByName(taskName) {
         const headings = document.querySelectorAll('h5');
@@ -39,15 +39,14 @@
     window.addEventListener('keydown', function (e) {
         if (!e.altKey) return;
 
-        const key = e.key.toLowerCase();
-
-        if (key === 'g') {
+        // Sử dụng e.code để nhận diện chính xác dãy phím số phía trên bàn phím lẫn phím Numpad
+        if (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1') {
             e.preventDefault();
             openTaskByName('Good Traffic');
-        } else if (key === 'd') {
+        } else if (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') {
             e.preventDefault();
             openTaskByName('Direct Traffic');
-        } else if (key === 'n') {
+        } else if (e.code === 'Digit3' || e.code === 'Numpad3' || e.key === '3') {
             e.preventDefault();
             openTaskByName('Traffic Number 1');
         }
