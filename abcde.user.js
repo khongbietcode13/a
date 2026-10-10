@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         gtraffic auto full
+// @name         Traffic Auto Full (V2.3)
 // @namespace    http://tampermonkey.net/
-// @version      2.2
-// @description  Tự động 100%: Tự đếm, tự copy, tự đóng tab, tự điền và ấn xác nhận
+// @version      2.3
+// @description  Tự động 100%: Hỗ trợ Gtraffic & Trafficso1. Tự đếm, tự copy, tự đóng tab, tự điền và ấn xác nhận
 // @author       You
 // @match        *://*/*
 // @grant        GM_setValue
@@ -16,25 +16,27 @@
     'use strict';
 
     // ---------------------------------------------------------
-    // PHẦN 1: XỬ LÝ TRÊN TRANG GTRAFFIC (TRANG NHẬN MÃ)
+    // PHẦN 1: XỬ LÝ TRÊN TRANG NHẬN MÃ (GTRAFFIC, TRAFFICSO1,...)
     // ---------------------------------------------------------
-    const isGtrafficDomain = window.location.hostname.includes('gtraffic.io');
+    const host = window.location.hostname;
+    // Bổ sung thêm trafficso1 vào danh sách các trang nhận mã xác nhận
+    const isReceiverDomain = host.includes('gtraffic') || host.includes('trafficso1');
     
-    if (isGtrafficDomain) {
-        console.log('[Tampermonkey] Đang chờ mã từ tab khác...');
+    if (isReceiverDomain) {
+        console.log('[Tampermonkey] Đang chờ mã từ tab tìm kiếm...');
         
         GM_addValueChangeListener("gtraffic_code", function(name, old_value, new_value, remote) {
             if (new_value && remote) {
                 console.log('[Tampermonkey] Đã nhận được mã:', new_value);
                 
-                // Tìm ô nhập mã
+                // Tìm ô nhập mã dựa trên placeholder (hoạt động trên cả gtraffic và trafficso1)
                 const inputElement = document.querySelector('input[placeholder="Nhập mã xác nhận"]');
                 if (inputElement) {
                     inputElement.value = new_value;
                     inputElement.dispatchEvent(new Event('input', { bubbles: true }));
                     inputElement.dispatchEvent(new Event('change', { bubbles: true }));
 
-                    // Tìm nút và click
+                    // Tìm nút xác nhận và click
                     setTimeout(() => {
                         const buttons = document.querySelectorAll('button');
                         for (let btn of buttons) {
@@ -46,11 +48,11 @@
                                 break;
                             }
                         }
-                    }, 800); 
+                    }, 800); // Chờ 0.8s để giao diện (Vue.js) cập nhật state
                 }
             }
         });
-        return; 
+        return; // Nếu là trang nhận mã thì dừng chạy phần bắt code bên dưới
     }
 
     // ---------------------------------------------------------
@@ -92,7 +94,7 @@
             });
 
             box.innerHTML = `
-                <div style="font-size: 13px; font-weight: bold; opacity: 0.9; margin-bottom: 6px; letter-spacing: 1px;">GTRAFFIC STATUS</div>
+                <div style="font-size: 13px; font-weight: bold; opacity: 0.9; margin-bottom: 6px; letter-spacing: 1px;">AUTO CODE STATUS</div>
                 <div id="gtraffic-content" style="font-size: 20px; font-weight: bold;">Đang tìm nút...</div>
                 <div id="gtraffic-code-box" style="margin-top: 10px;"></div>
             `;
@@ -133,14 +135,14 @@
 
             // 2. AUTO COPY & AUTO CHUYỂN TRANG
             GM_setClipboard(currentCode); // Auto copy vào khay nhớ tạm
-            GM_setValue("gtraffic_code", currentCode); // Bắn tín hiệu sang tab Gtraffic
+            GM_setValue("gtraffic_code", currentCode); // Bắn tín hiệu sang tab nhận mã
             
             // Đổi màu thông báo
             if (box) box.style.backgroundColor = '#52c41a';
             const btnInner = document.getElementById('gtraffic-btn-inner');
             if (btnInner) btnInner.innerText = '✓ ĐANG ĐÓNG TAB...';
             
-            // Đợi 1.5s rồi tự đóng (để bạn nhìn thấy nó đã bắt được)
+            // Đợi 1.5s rồi tự đóng 
             setTimeout(() => {
                 window.close();
             }, 1500);
