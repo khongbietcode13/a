@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Auto Close Ads - CryptoLinkForEarn
 // @namespace    http://tampermonkey.net/
-// @version      3.5
-// @description  Tự đóng quảng cáo, phím tắt Alt+1/2/3 và hiển thị Limit đếm ngược góc dưới bên phải
+// @version      3.6
+// @description  Tự đóng quảng cáo, phím tắt Alt+1/2/3, hiển thị Limit và Tự động chuyển hướng trang chủ
 // @author       You
 // @match        https://cryptolinkforearn.com/*
 // @match        https://*.cryptolinkforearn.com/*
@@ -12,6 +12,15 @@
 
 (function () {
     'use strict';
+
+    // ==========================================
+    // 0. TỰ ĐỘNG CHUYỂN HƯỚNG SANG TRANG LINKS
+    // ==========================================
+    const currentUrl = window.location.href.split('?')[0].split('#')[0]; // Lấy url gốc, bỏ qua các query parameters nếu có
+    if (currentUrl === 'https://cryptolinkforearn.com/' || currentUrl === 'https://cryptolinkforearn.com') {
+        window.location.replace('https://cryptolinkforearn.com/links');
+        return; // Dừng thực thi các code bên dưới để chờ trình duyệt chuyển hướng
+    }
 
     // ==========================================
     // 1. TẠO Ô HIỂN THỊ LIMIT MÀU ĐỎ Ở GÓC DƯỚI BÊN PHẢI
@@ -86,7 +95,6 @@
     // Cập nhật Limit liên tục mỗi 1 giây
     setInterval(updateLimitWidget, 1000);
 
-
     // ==========================================
     // 2. PHÍM TẮT MỞ LINK NHIỆM VỤ (ALT + 1, 2, 3)
     // ==========================================
@@ -126,7 +134,7 @@
     });
 
     // ==========================================
-    // 3. GIỮ NGUYÊN CODE TỰ ĐỘNG ĐÓNG QUẢNG CÁO CỦA BẠN
+    // 3. CODE TỰ ĐỘNG ĐÓNG QUẢNG CÁO 
     // ==========================================
     function clickX(svg) {
         console.log('[AutoClose] FOUND X:', svg);
