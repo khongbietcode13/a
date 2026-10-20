@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Traffic Auto Full (V2.3)
+// @name         Traffic Auto Full (V2.3 - Updated)
 // @namespace    http://tampermonkey.net/
-// @version      2.3
+// @version      2.3.1
 // @description  Tự động 100%: Hỗ trợ Gtraffic & Trafficso1. Tự đếm, tự copy, tự đóng tab, tự điền và ấn xác nhận
 // @author       You
 // @match        *://*/*
@@ -60,7 +60,9 @@
     // ---------------------------------------------------------
     const isTopWindow = window === window.top;
 
+    // Đã bổ sung các selector mới từ ảnh DevTools (.trade-btn-clfs1-container, #trade-btn-clfs1__arrow, #trade-btn-clfs1__content)
     const selectors = [
+        '.trade-btn-clfs1-container', '#trade-btn-clfs1__arrow', '#trade-btn-clfs1__content',
         '.trade-btn-clf-container', '.trade-btn-clf',
         '.trade-d-btn-container', '.trade-d-btn',
         '#trade-btn-clf__content', '#trade-d-btn__content',
