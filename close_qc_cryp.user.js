@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Auto Close Ads - CryptoLinkForEarn
 // @namespace    http://tampermonkey.net/
-// @version      3.7
+// @version      3.8
 // @description  Tự đóng quảng cáo, phím tắt Alt+1/2/3/4, hiển thị Limit và Tự động chuyển hướng trang chủ
 // @author       You
 // @match        https://cryptolinkforearn.com/*
@@ -49,9 +49,9 @@
         `;
         widget.innerHTML = `
             <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.4); padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase;">🔥 Tình trạng Limit</div>
-            <div id="limit-vietuser">System Vietuser (Alt+1): --</div>
+            <div id="limit-system">System (Alt+1): --</div>
             <div id="limit-link4m">Link4m (Alt+2): --</div>
-            <div id="limit-number1">Traffic Number 1 (Alt+3): --</div>
+            <div id="limit-vietuser">Vietuser (Alt+3): --</div>
             <div id="limit-apptraffic">AppTraffic (Alt+4): --</div>
         `;
 
@@ -84,14 +84,14 @@
     function updateLimitWidget() {
         createLimitWidget();
 
-        const vietuserEl = document.getElementById('limit-vietuser');
+        const systemEl = document.getElementById('limit-system');
         const link4mEl = document.getElementById('limit-link4m');
-        const num1El = document.getElementById('limit-number1');
+        const vietuserEl = document.getElementById('limit-vietuser');
         const appTrafficEl = document.getElementById('limit-apptraffic');
 
-        if (vietuserEl) vietuserEl.textContent = `System Vietuser (Alt+1): ${getTaskLimit('System Vietuser')}`;
+        if (systemEl) systemEl.textContent = `System (Alt+1): ${getTaskLimit('System')}`;
         if (link4mEl) link4mEl.textContent = `Link4m (Alt+2): ${getTaskLimit('Link4m')}`;
-        if (num1El) num1El.textContent = `Traffic Number 1 (Alt+3): ${getTaskLimit('Traffic Number 1')}`;
+        if (vietuserEl) vietuserEl.textContent = `Vietuser (Alt+3): ${getTaskLimit('Vietuser')}`;
         if (appTrafficEl) appTrafficEl.textContent = `AppTraffic (Alt+4): ${getTaskLimit('AppTraffic')}`;
     }
 
@@ -126,13 +126,13 @@
 
         if (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1') {
             e.preventDefault();
-            openTaskByName('System Vietuser');
+            openTaskByName('System');
         } else if (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') {
             e.preventDefault();
             openTaskByName('Link4m');
         } else if (e.code === 'Digit3' || e.code === 'Numpad3' || e.key === '3') {
             e.preventDefault();
-            openTaskByName('Traffic Number 1');
+            openTaskByName('Vietuser');
         } else if (e.code === 'Digit4' || e.code === 'Numpad4' || e.key === '4') {
             e.preventDefault();
             openTaskByName('AppTraffic');
