@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Auto Close Ads - CryptoLinkForEarn
 // @namespace    http://tampermonkey.net/
-// @version      3.8
+// @version      3.9
 // @description  Tự đóng quảng cáo, phím tắt Alt+1/2/3/4, hiển thị Limit và Tự động chuyển hướng trang chủ
 // @author       You
 // @match        https://cryptolinkforearn.com/*
@@ -50,7 +50,7 @@
         widget.innerHTML = `
             <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.4); padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase;">🔥 Tình trạng Limit</div>
             <div id="limit-system">System (Alt+1): --</div>
-            <div id="limit-link4m">Link4m (Alt+2): --</div>
+            <div id="limit-directtraffic">Direct Traffic (Alt+2): --</div>
             <div id="limit-vietuser">Vietuser (Alt+3): --</div>
             <div id="limit-apptraffic">AppTraffic (Alt+4): --</div>
         `;
@@ -85,12 +85,12 @@
         createLimitWidget();
 
         const systemEl = document.getElementById('limit-system');
-        const link4mEl = document.getElementById('limit-link4m');
+        const directTrafficEl = document.getElementById('limit-directtraffic');
         const vietuserEl = document.getElementById('limit-vietuser');
         const appTrafficEl = document.getElementById('limit-apptraffic');
 
         if (systemEl) systemEl.textContent = `System (Alt+1): ${getTaskLimit('System')}`;
-        if (link4mEl) link4mEl.textContent = `Link4m (Alt+2): ${getTaskLimit('Link4m')}`;
+        if (directTrafficEl) directTrafficEl.textContent = `Direct Traffic (Alt+2): ${getTaskLimit('Direct Traffic')}`;
         if (vietuserEl) vietuserEl.textContent = `Vietuser (Alt+3): ${getTaskLimit('Vietuser')}`;
         if (appTrafficEl) appTrafficEl.textContent = `AppTraffic (Alt+4): ${getTaskLimit('AppTraffic')}`;
     }
@@ -129,7 +129,7 @@
             openTaskByName('System');
         } else if (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') {
             e.preventDefault();
-            openTaskByName('Link4m');
+            openTaskByName('Direct Traffic');
         } else if (e.code === 'Digit3' || e.code === 'Numpad3' || e.key === '3') {
             e.preventDefault();
             openTaskByName('Vietuser');
