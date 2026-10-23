@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TrafficViet Shortlink Auto Bypass & Initial Continue
 // @namespace    https://trafficviet.vn/
-// @version      1.0.1
-// @description  Tự động bypass nhiệm vụ TrafficViet, đếm ngược qua API widget, tự động bấm Tiếp tục ở trang đầu và điền mã xác nhận.
+// @version      1.0.2
+// @description  Tự động bypass nhiệm vụ TrafficViet, đếm ngược qua API widget, tự động bấm Tiếp tục ở trang đầu, tự reload 1 lần và điền mã xác nhận.
 // @author       Antigravity Engineering
 // @match        https://app.trafficviet.vn/s/*
 // @match        https://*.trafficviet.vn/s/*
@@ -292,7 +292,7 @@
     });
 
     // ==========================================
-    // TÍNH NĂNG MỚI: BẤM NÚT "TIẾP TỤC" Ở TRANG ĐẦU
+    // TÍNH NĂNG: BẤM NÚT "TIẾP TỤC" & TỰ ĐỘNG RELOAD (F5) TRANG
     // ==========================================
     function autoClickFirstPageContinue() {
         const hasInput = document.querySelector('input[placeholder*="Nhập mã"], input[aria-label*="Mã"]');
@@ -304,7 +304,17 @@
             });
             if (continueBtn && !continueBtn.disabled) {
                 log('Tự động bấm nút [Tiếp tục] ở trang đầu...');
+                sessionStorage.setItem('th_auto_reloaded', 'pending');
                 continueBtn.click();
+            }
+        } else {
+            // Kiểm tra nếu vừa bấm Tiếp tục xong và xuất hiện ô nhập liệu thì tiến hành F5 reload lại trang 1 lần
+            if (sessionStorage.getItem('th_auto_reloaded') === 'pending') {
+                sessionStorage.setItem('th_auto_reloaded', 'done');
+                log('Đã xuất hiện giao diện tool, đang tự động F5 reload lại trang...');
+                setTimeout(() => {
+                    location.reload();
+                }, 300);
             }
         }
     }
