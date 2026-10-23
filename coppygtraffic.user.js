@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Gtraffic Auto Copy + Auto Open
 // @namespace    http://tampermonkey.net/
-// @version      7.0
+// @version      8.2
 // @description  Tự động copy và mở link Gtraffic
 // @author       You
 // @match        https://direct.gtraffic.io/*
@@ -71,7 +71,7 @@
             return true;
         }
 
-        // domain kiểu betilive4d.net
+        // domain kiểu betilive4d.net hoặc devamultishop.co.in
         if (/^(www\.)?[a-zA-Z0-9-]+\.[a-zA-Z]{2,}(\/\S*)?$/i.test(text)) {
             return true;
         }
@@ -217,50 +217,23 @@
 
 
     // ==============================
-    // TÌM LINK
+    // TÌM LINK (ĐÃ CẬP NHẬT THEO DOM MỚI)
     // ==============================
     function scanPage() {
 
         removeUnselectable();
 
+        // Quét tất cả thẻ span chứa domain và các div giao diện
+        const elements = document.querySelectorAll('span.notranslate, span.break-all, div.bg-slate-50');
 
-        // --------------------------------
-        // Cách 1: selector box cũ
-        // --------------------------------
-        const boxes = document.querySelectorAll(`
-            div.bg-slate-50.border.border-slate-300.flex.items-center.justify-between,
-            div.bg-slate-50.border.border-slate-300.border-l-4.flex.items-center.justify-between
-        `);
+        elements.forEach(el => {
+            const text = (el.innerText || el.textContent || '').trim();
 
-        boxes.forEach(box => {
-            processBox(box);
-        });
-
-
-        // --------------------------------
-        // Cách 2: tìm mọi div có text là domain
-        // --------------------------------
-        const allDivs = document.querySelectorAll('div');
-
-        allDivs.forEach(div => {
-
-            // Bỏ qua div có quá nhiều phần tử con
-            // để tránh lấy nhầm cả khối hướng dẫn
-            if (div.children.length > 2) {
-                return;
+            if (isValidLink(text)) {
+                // Nếu tìm thấy ở thẻ span, lấy div cha của nó để gắn hiệu ứng cho đẹp
+                const targetBox = el.tagName.toLowerCase() === 'span' ? (el.closest('div') || el) : el;
+                processBox(targetBox);
             }
-
-            const text = (
-                div.innerText ||
-                div.textContent ||
-                ''
-            ).trim();
-
-            if (!isValidLink(text)) {
-                return;
-            }
-
-            processBox(div);
         });
     }
 
@@ -337,6 +310,6 @@
     // ==============================
     setInterval(() => {
         scanPage();
-    }, 1000);
+    }, 500);
 
 })();
