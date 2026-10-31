@@ -49,7 +49,7 @@
         `;
         widget.innerHTML = `
             <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.4); padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase;">🔥 Tình trạng Limit</div>
-            <div id="limit-system">System (Alt+1): --</div>
+            <div id="limit-system">System 6h,12h,18h có mã (Alt+1): --</div>
             <div id="limit-directtraffic">Direct Traffic (Alt+2): --</div>
             <div id="limit-vietuser">Vietuser (Alt+3): --</div>
             <div id="limit-apptraffic">AppTraffic (Alt+4): --</div>
