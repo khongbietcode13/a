@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Auto Close Ads - CryptoLinkForEarn-4.0
 // @namespace    http://tampermonkey.net/
-// @version      4.0
+// @version      4.1
 // @description  Tự đóng quảng cáo, phím tắt Alt+1/2/3/4, hiển thị Limit và Tự động chuyển hướng trang chủ
 // @author       You
 // @match        https://cryptolinkforearn.com/*
@@ -16,10 +16,10 @@
     // ==========================================
     // 0. TỰ ĐỘNG CHUYỂN HƯỚNG SANG TRANG LINKS
     // ==========================================
-    const currentUrl = window.location.href.split('?')[0].split('#')[0]; // Lấy url gốc, bỏ qua các query parameters nếu có
+    const currentUrl = window.location.href.split('?')[0].split('#')[0];
     if (currentUrl === 'https://cryptolinkforearn.com/' || currentUrl === 'https://cryptolinkforearn.com') {
         window.location.replace('https://cryptolinkforearn.com/links');
-        return; // Dừng thực thi các code bên dưới để chờ trình duyệt chuyển hướng
+        return;
     }
 
     // ==========================================
@@ -49,7 +49,7 @@
         `;
         widget.innerHTML = `
             <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.4); padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase;">🔥 Tình trạng Limit</div>
-            <div id="limit-system">System 6h,12h,18h có mã (Alt+1): --</div>
+            <div id="limit-system">System (Alt+1): --</div>
             <div id="limit-directtraffic">Direct Traffic (Alt+2): --</div>
             <div id="limit-vietuser">Vietuser (Alt+3): --</div>
             <div id="limit-apptraffic">AppTraffic (Alt+4): --</div>
@@ -65,15 +65,17 @@
         else document.addEventListener('DOMContentLoaded', appendWidget);
     }
 
+    // Hàm lấy limit - Sửa đoạn kiểm tra `.includes()` để linh hoạt hơn
     function getTaskLimit(taskName) {
         const headings = document.querySelectorAll('h5');
         for (const h5 of headings) {
-            if (h5.textContent.trim().toLowerCase() === taskName.toLowerCase()) {
+            const text = h5.textContent.trim().toLowerCase();
+            if (text.includes(taskName.toLowerCase())) {
                 const parentCard = h5.closest('div[id^="pcl-"]') || h5.parentElement.parentElement;
                 if (parentCard) {
                     const limitEl = parentCard.querySelector('.limit-text') || parentCard.querySelector('p');
                     if (limitEl) {
-                        return limitEl.textContent.trim(); // Ví dụ: "Limit: 2/2" hoặc "2/2"
+                        return limitEl.textContent.trim();
                     }
                 }
             }
@@ -95,7 +97,6 @@
         if (appTrafficEl) appTrafficEl.textContent = `AppTraffic (Alt+4): ${getTaskLimit('AppTraffic')}`;
     }
 
-    // Cập nhật Limit liên tục mỗi 1 giây
     setInterval(updateLimitWidget, 1000);
 
     // ==========================================
@@ -105,7 +106,8 @@
         const headings = document.querySelectorAll('h5');
 
         for (const h5 of headings) {
-            if (h5.textContent.trim().toLowerCase() === taskName.toLowerCase()) {
+            const text = h5.textContent.trim().toLowerCase();
+            if (text.includes(taskName.toLowerCase())) {
                 const parentCard = h5.closest('div[id^="pcl-"]') || h5.parentElement.parentElement;
 
                 if (parentCard) {
@@ -118,7 +120,7 @@
                 }
             }
         }
-        console.warn(`[AutoShortcut] Không tìm thấy nhiệm vụ nào có tên: "${taskName}"`);
+        console.warn(`[AutoShortcut] Không tìm thấy nhiệm vụ nào chứa tên: "${taskName}"`);
     }
 
     window.addEventListener('keydown', function (e) {
@@ -126,7 +128,7 @@
 
         if (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1') {
             e.preventDefault();
-            openTaskByName('System 6h,12h,18h có mã');
+            openTaskByName('System');
         } else if (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') {
             e.preventDefault();
             openTaskByName('Direct Traffic');
