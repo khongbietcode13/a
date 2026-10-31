@@ -126,7 +126,7 @@
 
         if (e.code === 'Digit1' || e.code === 'Numpad1' || e.key === '1') {
             e.preventDefault();
-            openTaskByName('System');
+            openTaskByName('System 6h,12h,18h có mã');
         } else if (e.code === 'Digit2' || e.code === 'Numpad2' || e.key === '2') {
             e.preventDefault();
             openTaskByName('Direct Traffic');
