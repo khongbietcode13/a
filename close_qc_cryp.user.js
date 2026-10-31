@@ -1,7 +1,7 @@
 // ==UserScript==
-// @name         Auto Close Ads - CryptoLinkForEarn-4.0
+// @name         Auto Close Ads - CryptoLinkForEarn-4.2
 // @namespace    http://tampermonkey.net/
-// @version      4.1
+// @version      4.2
 // @description  Tự đóng quảng cáo, phím tắt Alt+1/2/3/4, hiển thị Limit và Tự động chuyển hướng trang chủ
 // @author       You
 // @match        https://cryptolinkforearn.com/*
@@ -65,18 +65,24 @@
         else document.addEventListener('DOMContentLoaded', appendWidget);
     }
 
-    // Hàm lấy limit - Sửa đoạn kiểm tra `.includes()` để linh hoạt hơn
-    function getTaskLimit(taskName) {
+    // Lấy limit linh hoạt & chính xác hơn
+    function getTaskLimit(taskKeyword) {
         const headings = document.querySelectorAll('h5');
         for (const h5 of headings) {
-            const text = h5.textContent.trim().toLowerCase();
-            if (text.includes(taskName.toLowerCase())) {
-                const parentCard = h5.closest('div[id^="pcl-"]') || h5.parentElement.parentElement;
+            const text = h5.textContent.trim();
+            // Quét từ khóa không phân biệt hoa thường
+            if (new RegExp(taskKeyword, 'i').test(text)) {
+                // Cách 1: Tìm trong khung chứa (Card)
+                const parentCard = h5.closest('div[class*="rounded"], div[id^="pcl-"]') || h5.parentElement;
                 if (parentCard) {
                     const limitEl = parentCard.querySelector('.limit-text') || parentCard.querySelector('p');
-                    if (limitEl) {
+                    if (limitEl && limitEl.textContent.trim()) {
                         return limitEl.textContent.trim();
                     }
+                }
+                // Cách 2: Tìm phần tử ngay bên dưới h5
+                if (h5.nextElementSibling && h5.nextElementSibling.textContent.includes('Limit')) {
+                    return h5.nextElementSibling.textContent.trim();
                 }
             }
         }
@@ -102,25 +108,25 @@
     // ==========================================
     // 2. PHÍM TẮT MỞ LINK NHIỆM VỤ (ALT + 1, 2, 3, 4)
     // ==========================================
-    function openTaskByName(taskName) {
+    function openTaskByName(taskKeyword) {
         const headings = document.querySelectorAll('h5');
 
         for (const h5 of headings) {
-            const text = h5.textContent.trim().toLowerCase();
-            if (text.includes(taskName.toLowerCase())) {
-                const parentCard = h5.closest('div[id^="pcl-"]') || h5.parentElement.parentElement;
+            const text = h5.textContent.trim();
+            if (new RegExp(taskKeyword, 'i').test(text)) {
+                const parentCard = h5.closest('div[class*="rounded"], div[id^="pcl-"]') || h5.parentElement.parentElement;
 
                 if (parentCard) {
                     const link = parentCard.querySelector('a[href]');
                     if (link) {
-                        console.log(`[AutoShortcut] Đã tìm thấy link cho ${taskName}:`, link.href);
+                        console.log(`[AutoShortcut] Đã tìm thấy link cho ${taskKeyword}:`, link.href);
                         window.open(link.href, '_blank');
                         return;
                     }
                 }
             }
         }
-        console.warn(`[AutoShortcut] Không tìm thấy nhiệm vụ nào chứa tên: "${taskName}"`);
+        console.warn(`[AutoShortcut] Không tìm thấy nhiệm vụ nào chứa tên: "${taskKeyword}"`);
     }
 
     window.addEventListener('keydown', function (e) {
