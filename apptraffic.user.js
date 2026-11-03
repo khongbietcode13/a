@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         TrafficViet Shortlink Auto Bypass & Initial Continue
+// @name         TrafficViet Shortlink Auto Bypass & Code Claimer
 // @namespace    https://trafficviet.vn/
-// @version      1.0.3
-// @description  Tự động bypass nhiệm vụ TrafficViet, đếm ngược qua API widget, tự động bấm Tiếp tục ở trang đầu, tự reload khi xuất hiện giao diện nhiệm vụ và điền mã xác nhận.
+// @version      1.0.4
+// @description  Tự động bypass nhiệm vụ TrafficViet, đếm ngược qua API widget và điền mã xác nhận.
 // @author       Antigravity Engineering
 // @match        https://app.trafficviet.vn/s/*
 // @match        https://*.trafficviet.vn/s/*
@@ -291,40 +291,6 @@
         panel.classList.toggle('minimized');
     });
 
-    // ==========================================
-    // TÍNH NĂNG: BẤM NÚT "TIẾP TỤC" & TỰ ĐỘNG RELOAD (F5) TRANG
-    // ==========================================
-    function autoClickFirstPageContinue() {
-        const hasInput = document.querySelector('input[placeholder*="Nhập mã"], input[aria-label*="Mã"]');
-        
-        // Kiểm tra xem giao diện nhiệm vụ đầy đủ đã xuất hiện chưa
-        const isTaskUiLoaded = document.body.innerText.includes('HOÀN THÀNH NHIỆM VỤ ĐỂ NHẬN') || 
-                               document.body.innerText.includes('LINK TẢI CỦA BẠN') ||
-                               document.querySelector('a[href*="google.com"]') !== null;
-
-        if (!hasInput) {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const continueBtn = buttons.find(b => {
-                const txt = b.textContent.trim().toLowerCase();
-                return (txt.includes('tiếp tục') || txt.includes('continue')) && b.id !== 'th-btn-start' && b.id !== 'th-btn-copy';
-            });
-            if (continueBtn && !continueBtn.disabled) {
-                log('Tự động bấm nút [Tiếp tục] ở trang đầu...');
-                sessionStorage.setItem('th_auto_reloaded', 'pending');
-                continueBtn.click();
-            }
-        } else {
-            // Kiểm tra nếu vừa bấm Tiếp tục xong VÀ giao diện nhiệm vụ đã hiển thị đầy đủ thì tiến hành F5 reload lại trang 1 lần
-            if (sessionStorage.getItem('th_auto_reloaded') === 'pending' && isTaskUiLoaded) {
-                sessionStorage.setItem('th_auto_reloaded', 'done');
-                log('Đã xuất hiện giao diện nhiệm vụ, đang tự động F5 reload lại trang...');
-                setTimeout(() => {
-                    location.reload();
-                }, 500);
-            }
-        }
-    }
-
     // Auto detect target URL from Inertia props on app.trafficviet.vn
     function autoDetectUrl() {
         try {
@@ -360,7 +326,6 @@
 
     // Initial check after load
     setTimeout(() => {
-        autoClickFirstPageContinue();
         autoDetectUrl();
     }, 500);
 
