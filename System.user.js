@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         TrafficHub Shortlink Auto Bypass & Code Claimer
 // @namespace    https://traffichub.vn/
-// @version      1.0.2
-// @description  Tự động bypass nhiệm vụ TrafficHub, đếm ngược 60s qua API widget, tự động bấm Tiếp tục ở trang đầu, tự reload 1 lần và điền mã xác nhận.
+// @version      1.0.3
+// @description  Tự động bypass nhiệm vụ TrafficHub, đếm ngược 60s qua API widget và điền mã xác nhận.
 // @author       Antigravity Engineering
 // @match        https://system.traffichub.vn/s/*
 // @match        https://*.traffichub.vn/s/*
@@ -292,38 +292,6 @@
         panel.classList.toggle('minimized');
     });
 
-    // ==========================================
-    // TÍNH NĂNG: BẤM NÚT "TIẾP TỤC" VÀ TỰ ĐỘNG F5 (RELOAD)
-    // ==========================================
-    function autoClickFirstPageContinue() {
-        const hasInput = document.querySelector('input[placeholder*="Nhập mã"], input[aria-label*="Mã"]');
-
-        // Nếu chưa xuất hiện ô nhập mã -> Đang ở trang 1
-        if (!hasInput) {
-            const buttons = Array.from(document.querySelectorAll('button'));
-            const continueBtn = buttons.find(b => {
-                const txt = b.textContent.trim().toLowerCase();
-                return (txt.includes('tiếp tục') || txt.includes('continue')) && b.id !== 'th-btn-start' && b.id !== 'th-btn-copy';
-            });
-
-            if (continueBtn && !continueBtn.disabled) {
-                log('Phát hiện trang đầu, đang tự động bấm [Tiếp tục]...');
-                // Đặt cờ yêu cầu reload trang sau khi bấm
-                sessionStorage.setItem('th_hub_should_reload', 'true');
-                continueBtn.click();
-            }
-        } else {
-            // Nếu đã sang trang 2 (đã có ô nhập mã) và có cờ yêu cầu reload
-            if (sessionStorage.getItem('th_hub_should_reload') === 'true') {
-                sessionStorage.removeItem('th_hub_should_reload'); // Xóa cờ để tránh lặp vô hạn
-                log('Đã bấm [Tiếp tục], tiến hành F5 reload lại trang...');
-                setTimeout(() => {
-                    location.reload();
-                }, 400);
-            }
-        }
-    }
-
     // Auto detect target URL from Inertia props on system.traffichub.vn
     function autoDetectUrl() {
         try {
@@ -359,7 +327,6 @@
 
     // Initial check after load
     setTimeout(() => {
-        autoClickFirstPageContinue();
         autoDetectUrl();
     }, 500);
 
