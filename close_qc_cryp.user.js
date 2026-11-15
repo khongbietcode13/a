@@ -51,7 +51,7 @@
             <div style="text-align: center; border-bottom: 1px solid rgba(255,255,255,0.4); padding-bottom: 4px; margin-bottom: 6px; text-transform: uppercase;">🔥 Tình trạng Limit</div>
             <div id="limit-system">System (Alt+1): --</div>
             <div id="limit-directtraffic">Direct Traffic (Alt+2): --</div>
-            <div id="limit-vietuser">Vietuser (Alt+3): --</div>
+            <div id="limit-Link4m">Link4m (Alt+3): --</div>
             <div id="limit-apptraffic">AppTraffic (Alt+4): --</div>
         `;
 
@@ -94,12 +94,12 @@
 
         const systemEl = document.getElementById('limit-system');
         const directTrafficEl = document.getElementById('limit-directtraffic');
-        const vietuserEl = document.getElementById('limit-vietuser');
+        const Link4mEl = document.getElementById('limit-Link4m');
         const appTrafficEl = document.getElementById('limit-apptraffic');
 
         if (systemEl) systemEl.textContent = `System (Alt+1): ${getTaskLimit('System')}`;
         if (directTrafficEl) directTrafficEl.textContent = `Direct Traffic (Alt+2): ${getTaskLimit('Direct Traffic')}`;
-        if (vietuserEl) vietuserEl.textContent = `Vietuser (Alt+3): ${getTaskLimit('Vietuser')}`;
+        if (Link4mEl) Link4mEl.textContent = `Link4m (Alt+3): ${getTaskLimit('Link4m')}`;
         if (appTrafficEl) appTrafficEl.textContent = `AppTraffic (Alt+4): ${getTaskLimit('AppTraffic')}`;
     }
 
@@ -140,7 +140,7 @@
             openTaskByName('Direct Traffic');
         } else if (e.code === 'Digit3' || e.code === 'Numpad3' || e.key === '3') {
             e.preventDefault();
-            openTaskByName('Vietuser');
+            openTaskByName('Link4m');
         } else if (e.code === 'Digit4' || e.code === 'Numpad4' || e.key === '4') {
             e.preventDefault();
             openTaskByName('AppTraffic');
