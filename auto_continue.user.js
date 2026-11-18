@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Auto Click Complete - Cryptolinkforearn
 // @namespace    http://tampermonkey.net/
-// @version      2.5
-// @description  Cuộn tới nút Xác Minh, click Xác Minh, Continue (kể cả trong iFrame) và Confirm & Claim
+// @version      2.6
+// @description  Cuộn khung IconCaptcha vào giữa màn hình, click nút Xác Minh, Continue (kể cả trong iFrame) và Confirm & Claim
 // @match        https://pub.cryptolinkforearn.com/*
 // @grant        none
 // @run-at       document-start
@@ -14,6 +14,7 @@
     let verifyClicked = false;
     let continueClicked = false;
     let confirmClaimClicked = false;
+    let captchaScrolled = false;
 
     // Hàm giả lập click mạnh mẽ hơn
     function triggerClick(el) {
@@ -27,25 +28,33 @@
         });
     }
 
-    // 1. TÌM, CUỘN TỚI VÀ CLICK NÚT XÁC MINH
+    // 0. TỰ ĐỘNG CUỘN KHUNG ICONCAPTCHA VÀO GIỮA MÀN HÌNH
+    function autoScrollCaptcha() {
+        if (captchaScrolled) return;
+
+        // Tìm khung dialog của IconCaptcha (sử dụng *= để tránh bị lỗi khi chuỗi hash phía sau thay đổi)
+        const captchaBox = document.querySelector('section[class*="IconCaptcha_dialog"]');
+        if (captchaBox) {
+            const style = getComputedStyle(captchaBox);
+            if (style.display !== 'none' && style.visibility !== 'hidden') {
+                console.log('[AutoClick] Cuộn khung IconCaptcha vào giữa màn hình');
+                captchaScrolled = true;
+                captchaBox.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+            }
+        }
+    }
+
+    // 1. TÌM NÚT XÁC MINH
     function autoClickVerify() {
         if (verifyClicked) return;
         const buttons = document.querySelectorAll('button');
         for (const button of buttons) {
             const text = (button.innerText || button.textContent || '').trim().toLowerCase();
             if ((text.includes('xác minh để tiếp tục') || text.includes('verify to continue')) && !button.disabled) {
-                console.log('[AutoClick] Cuộn xuống và click nút Xác minh');
+                console.log('[AutoClick] Click nút Xác minh');
                 verifyClicked = true;
-
-                // Cuộn nút vào giữa màn hình
-                button.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-                // Đợi 500ms để trang cuộn xong rồi mới click
-                setTimeout(() => {
-                    triggerClick(button);
-                }, 500);
-
-                setTimeout(() => { verifyClicked = false; }, 3500);
+                triggerClick(button);
+                setTimeout(() => { verifyClicked = false; }, 3000);
                 break;
             }
         }
@@ -105,6 +114,7 @@
 
     // Tự động quét liên tục
     setInterval(() => {
+        autoScrollCaptcha();
         autoClickVerify();
         autoClickContinue();
         autoClickConfirmClaim();
