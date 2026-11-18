@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Auto Click Complete - Cryptolinkforearn
 // @namespace    http://tampermonkey.net/
-// @version      2.4
-// @description  Click nút Xác Minh, Continue (kể cả trong iFrame) và Confirm & Claim
+// @version      2.5
+// @description  Cuộn tới nút Xác Minh, click Xác Minh, Continue (kể cả trong iFrame) và Confirm & Claim
 // @match        https://pub.cryptolinkforearn.com/*
 // @grant        none
 // @run-at       document-start
@@ -27,17 +27,25 @@
         });
     }
 
-    // 1. TÌM NÚT XÁC MINH
+    // 1. TÌM, CUỘN TỚI VÀ CLICK NÚT XÁC MINH
     function autoClickVerify() {
         if (verifyClicked) return;
         const buttons = document.querySelectorAll('button');
         for (const button of buttons) {
             const text = (button.innerText || button.textContent || '').trim().toLowerCase();
             if ((text.includes('xác minh để tiếp tục') || text.includes('verify to continue')) && !button.disabled) {
-                console.log('[AutoClick] Click nút Xác minh');
+                console.log('[AutoClick] Cuộn xuống và click nút Xác minh');
                 verifyClicked = true;
-                triggerClick(button);
-                setTimeout(() => { verifyClicked = false; }, 3000);
+
+                // Cuộn nút vào giữa màn hình
+                button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                // Đợi 500ms để trang cuộn xong rồi mới click
+                setTimeout(() => {
+                    triggerClick(button);
+                }, 500);
+
+                setTimeout(() => { verifyClicked = false; }, 3500);
                 break;
             }
         }
