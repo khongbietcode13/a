@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Auto Click Complete - Cryptolinkforearn
 // @namespace    http://tampermonkey.net/
-// @version      2.6
-// @description  Cuộn khung IconCaptcha vào giữa màn hình, click nút Xác Minh, Continue (kể cả trong iFrame) và Confirm & Claim
+// @version      2.7
+// @description  Cuộn khung IconCaptcha sát mép trên màn hình, click nút Xác Minh, Continue (kể cả trong iFrame) và Confirm & Claim
 // @match        https://pub.cryptolinkforearn.com/*
 // @grant        none
 // @run-at       document-start
@@ -28,18 +28,24 @@
         });
     }
 
-    // 0. TỰ ĐỘNG CUỘN KHUNG ICONCAPTCHA VÀO GIỮA MÀN HÌNH
+    // 0. TỰ ĐỘNG CUỘN KHUNG ICONCAPTCHA LÊN SÁT ĐỈNH MÀN HÌNH
     function autoScrollCaptcha() {
         if (captchaScrolled) return;
 
-        // Tìm khung dialog của IconCaptcha (sử dụng *= để tránh bị lỗi khi chuỗi hash phía sau thay đổi)
         const captchaBox = document.querySelector('section[class*="IconCaptcha_dialog"]');
         if (captchaBox) {
             const style = getComputedStyle(captchaBox);
             if (style.display !== 'none' && style.visibility !== 'hidden') {
-                console.log('[AutoClick] Cuộn khung IconCaptcha vào giữa màn hình');
+                console.log('[AutoClick] Cuộn khung IconCaptcha lên sát mép trên');
                 captchaScrolled = true;
-                captchaBox.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+
+                // Tính vị trí của khung captcha và cuộn sao cho mép trên của nó cách đỉnh trình duyệt 10px
+                const rect = captchaBox.getBoundingClientRect();
+                const targetY = window.scrollY + rect.top - 10;
+                window.scrollTo({
+                    top: Math.max(0, targetY),
+                    behavior: 'smooth'
+                });
             }
         }
     }
@@ -64,7 +70,6 @@
     function autoClickContinue() {
         if (continueClicked) return;
 
-        // Tìm trong document chính và tất cả các iframe
         const docs = [document];
         document.querySelectorAll('iframe').forEach(iframe => {
             try {
@@ -75,7 +80,6 @@
         });
 
         for (const doc of docs) {
-            // Tìm nút Continue theo tên class chứa IconCaptcha_continue hoặc chứa text 'Continue'
             const btn = doc.querySelector('button[class*="IconCaptcha_continue"]') ||
                         Array.from(doc.querySelectorAll('button')).find(b => b.textContent.trim().toLowerCase() === 'continue');
 
