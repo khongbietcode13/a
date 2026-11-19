@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Auto Close Ads - CryptoLinkForEarn-4.2
 // @namespace    http://tampermonkey.net/
-// @version      4.2.1
-// @description  Tự đóng quảng cáo, phím tắt Alt+1/2/3/4, hiển thị Limit và Tự động chuyển hướng trang chủ
+// @version      4.2.2
+// @description  Tự đóng quảng cáo, phím tắt Alt+1/2/3/4/5, hiển thị Limit và Tự động chuyển hướng trang chủ
 // @author       You
 // @match        https://cryptolinkforearn.com/*
 // @match        https://*.cryptolinkforearn.com/*
@@ -53,6 +53,7 @@
             <div id="limit-directtraffic">Direct Traffic (Alt+2): --</div>
             <div id="limit-Link4m">Link4m (Alt+3): --</div>
             <div id="limit-apptraffic">AppTraffic (Alt+4): --</div>
+            <div id="limit-layma">Lay ma (Alt+5): --</div>
         `;
 
         const appendWidget = () => {
@@ -96,17 +97,19 @@
         const directTrafficEl = document.getElementById('limit-directtraffic');
         const Link4mEl = document.getElementById('limit-Link4m');
         const appTrafficEl = document.getElementById('limit-apptraffic');
+        const laymaEl = document.getElementById('limit-layma');
 
         if (systemEl) systemEl.textContent = `System (Alt+1): ${getTaskLimit('System')}`;
         if (directTrafficEl) directTrafficEl.textContent = `Direct Traffic (Alt+2): ${getTaskLimit('Direct Traffic')}`;
         if (Link4mEl) Link4mEl.textContent = `Link4m (Alt+3): ${getTaskLimit('Link4m')}`;
         if (appTrafficEl) appTrafficEl.textContent = `AppTraffic (Alt+4): ${getTaskLimit('AppTraffic')}`;
+        if (laymaEl) laymaEl.textContent = `Lay ma (Alt+5): ${getTaskLimit('Lay ma')}`;
     }
 
     setInterval(updateLimitWidget, 1000);
 
     // ==========================================
-    // 2. PHÍM TẮT MỞ LINK NHIỆM VỤ (ALT + 1, 2, 3, 4)
+    // 2. PHÍM TẮT MỞ LINK NHIỆM VỤ (ALT + 1, 2, 3, 4, 5)
     // ==========================================
     function openTaskByName(taskKeyword) {
         const headings = document.querySelectorAll('h5');
@@ -144,6 +147,9 @@
         } else if (e.code === 'Digit4' || e.code === 'Numpad4' || e.key === '4') {
             e.preventDefault();
             openTaskByName('AppTraffic');
+        } else if (e.code === 'Digit5' || e.code === 'Numpad5' || e.key === '5') {
+            e.preventDefault();
+            openTaskByName('Lay ma');
         }
     });
 
