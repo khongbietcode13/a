@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name         Traffic Task Bridge Client
 // @namespace    http://tampermonkey.net/
-// @version      10.0
-// @description  Bridge gửi link về Node.js tuần tự & nhận tín hiệu OK
+// @version      9.2.1
+// @description  Bridge gửi link về Node.js
 // @author       You
 // @match        https://app.trafficviet.vn/s/*
 // @match        https://system.traffichub.vn/s/*
