@@ -1,9 +1,11 @@
 // ==UserScript==
 // @name         Link999 Saver & Auto Close Tab
 // @namespace    http://tampermonkey.net/
-// @version      1.1
+// @version      2.0
 // @description  Lưu link999.app / link999.win góc trái trên cùng và tự đóng tab linkhuongdan.online khi click
 // @match        *://*/*
+// @downloadURL  https://raw.githubusercontent.com/khongbietcode13/a/main/scan_octo.user.js
+// @updateURL    https://raw.githubusercontent.com/khongbietcode13/a/main/scan_octo.user.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_deleteValue
