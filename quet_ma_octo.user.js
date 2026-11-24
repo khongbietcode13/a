@@ -1,118 +1,562 @@
+
 // ==UserScript==
-// @name         Link999 Saver & Auto Close Tab
-// @namespace    http://tampermonkey.net/
-// @version      1.0
-// @description  Lưu link999.app / link999.win góc trái trên cùng và tự đóng tab linkhuongdan.online khi click
-// @match        *://*/*
+// @name         LinkHuongDan - Green OCR Scanner
+// @namespace    linkhuongdan-image-scanner
+// @version      2.4.0
+// @description  Tu dong nhan dien anh bai viet va OCR URL
+// @match        *://linkhuongdan.online/*
+// @match        *://*.linkhuongdan.online/*
 // @downloadURL  https://raw.githubusercontent.com/khongbietcode13/a/main/quet_ma_octo.user.js
 // @updateURL    https://raw.githubusercontent.com/khongbietcode13/a/main/quet_ma_octo.user.js
-// @grant        GM_setValue
-// @grant        GM_getValue
-// @grant        GM_deleteValue
-// @grant        GM_addValueChangeListener
-// @grant        window.close
-// @run-at       document-end
+// @require      https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js
+// @grant        GM_xmlhttpRequest
+// @connect      linkhuongdan.online
+// @connect      *.linkhuongdan.online
 // ==/UserScript==
 
-(function() {
+(function () {
     'use strict';
 
-    const currentUrl = window.location.href;
-    const currentHost = window.location.hostname;
+    if (window.__LHD_IMAGE_SCANNER__) return;
+    window.__LHD_IMAGE_SCANNER__ = true;
 
-    // 1. TỰ ĐỘNG LƯU LINK KHI TRUY CẬP link999.app/* HOẶC link999.win/*
-    if (/^https?:\/\/(www\.)?link999\.(app|win)\/.+/i.test(currentUrl)) {
-        GM_setValue('saved_link999', currentUrl);
-        GM_setValue('last_active_time', Date.now());
-    }
+    let worker = null;
+    let foundLinks = new Set();
+    let busy = false;
 
-    // 2. XỬ LÝ TỰ XÓA KHI ĐÓNG TRÌNH DUYỆT (Kiểm tra phiên làm việc)
-    // Nếu mở trình duyệt mới hoàn toàn (không có tab nào giữ session), xóa link cũ
-    const lastActive = GM_getValue('last_active_time', 0);
-    if (Date.now() - lastActive > 1000 * 60 * 60 * 6) { // Reset nếu tắt trình duyệt quá 6 tiếng
-        GM_deleteValue('saved_link999');
-    }
-    setInterval(() => {
-        if (GM_getValue('saved_link999', '')) {
-            GM_setValue('last_active_time', Date.now());
+    // ==============================
+    // GIAO DIEN
+    // ==============================
+
+    const style = document.createElement('style');
+
+    style.textContent = `
+        #lhd-scanner {
+            position: fixed;
+            top: 15px;
+            right: 15px;
+            z-index: 2147483647;
+            font-family: Consolas, monospace;
+            color: #39ff14;
+            user-select: none;
         }
-    }, 5000);
 
-    // 3. LẮNG NGHE LỆNH ĐÓNG TAB CHO linkhuongdan.online
-    if (currentHost.includes('linkhuongdan.online')) {
-        GM_addValueChangeListener('close_huongdan_trigger', function(name, oldVal, newVal, remote) {
-            if (remote && newVal) {
-                window.close();
-                // Dự phòng nếu trình duyệt chặn window.close()
-                setTimeout(() => {
-                    window.location.href = 'about:blank';
-                }, 200);
-            }
+        #lhd-panel {
+            display: block;
+            width: 280px;
+            max-height: 430px;
+            overflow-y: auto;
+            padding: 12px;
+            border: 1px solid #39ff14;
+            border-radius: 8px;
+            background: #050805;
+            color: #39ff14;
+            box-shadow: 0 0 12px #39ff1460;
+            font-size: 13px;
+        }
+
+        #lhd-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 4px 2px 10px;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #267c20;
+            cursor: move;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+
+        #lhd-status {
+            margin: 8px 0 10px;
+            color: #39ff14;
+            overflow-wrap: anywhere;
+        }
+
+        .lhd-item {
+            background: #0b160b;
+            border: 1px solid #1c5718;
+            padding: 10px;
+            margin-top: 7px;
+            border-radius: 5px;
+            overflow-wrap: anywhere;
+        }
+
+        .lhd-link {
+            display: block;
+            color: #39ff14;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .lhd-link:hover {
+            color: #b0ff9b;
+            text-decoration: underline;
+            text-shadow: 0 0 6px #39ff14;
+        }
+
+        .lhd-hint {
+            display: block;
+            color: #7abf70;
+            font-size: 10px;
+            margin-top: 6px;
+        }
+
+        .lhd-btn {
+            width: 100%;
+            background: #102810;
+            color: #39ff14;
+            border: 1px solid #39ff14;
+            padding: 8px 11px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: Consolas, monospace;
+            font-weight: bold;
+        }
+
+        .lhd-btn:hover {
+            background: #1b4817;
+            box-shadow: 0 0 8px #39ff1460;
+        }
+
+        #lhd-panel::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        #lhd-panel::-webkit-scrollbar-track {
+            background: #050805;
+        }
+
+        #lhd-panel::-webkit-scrollbar-thumb {
+            background: #267c20;
+            border-radius: 5px;
+        }
+    `;
+
+    document.head.appendChild(style);
+
+    const box = document.createElement('div');
+    box.id = 'lhd-scanner';
+
+    box.innerHTML = `
+        <div id="lhd-panel">
+
+            <div id="lhd-header">
+                <span>◈ LINK SCANNER</span>
+                <span>● LIVE</span>
+            </div>
+
+            <div id="lhd-status">
+                > INITIALIZING...
+            </div>
+
+            <div id="lhd-results"></div>
+
+            <div style="margin-top:12px">
+                <button class="lhd-btn" id="lhd-rescan">
+                    ↻ QUÉT LẠI
+                </button>
+            </div>
+
+        </div>
+    `;
+
+    document.body.appendChild(box);
+
+    const status = document.getElementById('lhd-status');
+    const results = document.getElementById('lhd-results');
+    const header = document.getElementById('lhd-header');
+
+    // ==============================
+    // KE0 THA GIAO DIEN
+    // ==============================
+
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    header.addEventListener('mousedown', function (e) {
+        if (e.button !== 0) return;
+
+        dragging = true;
+
+        const rect = box.getBoundingClientRect();
+
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+
+        box.style.right = 'auto';
+        box.style.left = rect.left + 'px';
+        box.style.top = rect.top + 'px';
+
+        e.preventDefault();
+    });
+
+    document.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+
+        const maxX = window.innerWidth - box.offsetWidth;
+        const maxY = window.innerHeight - box.offsetHeight;
+
+        box.style.left = Math.max(
+            0,
+            Math.min(e.clientX - offsetX, maxX)
+        ) + 'px';
+
+        box.style.top = Math.max(
+            0,
+            Math.min(e.clientY - offsetY, maxY)
+        ) + 'px';
+    });
+
+    document.addEventListener('mouseup', function () {
+        dragging = false;
+    });
+
+    // ==============================
+    // TU DONG TIM ANH WORDPRESS
+    // ==============================
+
+    function findTargetImages() {
+
+        const selectors = [
+            '.entry-content img[class*="wp-image-"]',
+            'article img[class*="wp-image-"]',
+            '.post-content img[class*="wp-image-"]'
+        ];
+
+        let images = [];
+
+        selectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(img => {
+                if (!images.includes(img)) {
+                    images.push(img);
+                }
+            });
+        });
+
+        // Loai bo anh qua nho
+        images = images.filter(img => {
+            const width = img.naturalWidth ||
+                Number(img.getAttribute('width')) || 0;
+
+            const height = img.naturalHeight ||
+                Number(img.getAttribute('height')) || 0;
+
+            if (width && width < 250) return false;
+            if (height && height < 250) return false;
+
+            return true;
+        });
+
+        return images;
+    }
+
+    // ==============================
+    // LAY DUONG DAN ANH
+    // ==============================
+
+    function getImageURL(img) {
+
+        return img.currentSrc ||
+            img.dataset.src ||
+            img.dataset.lazySrc ||
+            img.getAttribute('data-original') ||
+            img.getAttribute('src') ||
+            '';
+    }
+
+    // ==============================
+    // TAI ANH
+    // ==============================
+
+    function loadImage(url) {
+
+        return new Promise((resolve, reject) => {
+
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                responseType: 'blob',
+                timeout: 30000,
+
+                onload(response) {
+                    if (response.status === 200) {
+                        resolve(response.response);
+                    } else {
+                        reject(new Error(
+                            'HTTP ' + response.status
+                        ));
+                    }
+                },
+
+                onerror: reject,
+                ontimeout: reject
+            });
+
         });
     }
 
-    // 4. TẠO GIAO DIỆN GÓC TRÁI TRÊN CÙNG (NỀN ĐEN CHỮ XANH LÁ)
-    // Không hiển thị trong các iframe nhỏ (quảng cáo)
-    if (window.top !== window.self) return;
+    // ==============================
+    // NHAN DIEN URL BANG OCR
+    // ==============================
 
-    const box = document.createElement('div');
-    box.id = 'tm-link999-box';
-    Object.assign(box.style, {
-        position: 'fixed',
-        top: '6px',
-        left: '6px',
-        zIndex: '2147483647',
-        backgroundColor: '#000000',
-        color: '#00ff00',
-        border: '1px solid #00ff00',
-        borderRadius: '4px',
-        padding: '3px 7px',
-        fontSize: '11px',
-        fontFamily: 'monospace',
-        cursor: 'pointer',
-        boxShadow: '0 2px 5px rgba(0,0,0,0.6)',
-        maxWidth: '240px',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        display: 'none',
-        userSelect: 'none'
-    });
+    function extractURLs(text) {
 
-    function updateUI(url) {
-        if (url) {
-            box.style.display = 'block';
-            box.textContent = '🔗 ' + url.replace(/^https?:\/\//, '');
-            box.title = 'Click để mở link và đóng tab linkhuongdan.online:\n' + url;
-        } else {
-            box.style.display = 'none';
+        const regex =
+            /(?:https?:\/\/)?(?:www\.)?(?:[a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(?:\/[a-z0-9._~:/?#[\]@!$&'()*+,;=%-]*)?/gi;
+
+        return (text.match(regex) || []).map(value =>
+            value.replace(/[.,;!?)}\]]+$/g, '')
+        );
+    }
+
+    function normalizeURL(value) {
+
+        try {
+
+            let url = value.trim();
+
+            if (!/^https?:\/\//i.test(url)) {
+                url = 'https://' + url;
+            }
+
+            const parsed = new URL(url);
+
+            if (!parsed.hostname.includes('.')) return null;
+
+            if (parsed.hostname === location.hostname) {
+                return null;
+            }
+
+            return parsed.href;
+
+        } catch {
+            return null;
         }
     }
 
-    // Hiển thị link đang lưu ngay khi tải trang
-    updateUI(GM_getValue('saved_link999', ''));
+    // ==============================
+    // MO GOOGLE SEARCH TAB MOI
+    // ==============================
 
-    // Cập nhật giao diện theo thời gian thực ở tất cả các tab nếu có link mới
-    GM_addValueChangeListener('saved_link999', function(name, oldVal, newVal) {
-        updateUI(newVal);
-    });
+    function searchLink(url) {
 
-    // 5. SỰ KIỆN KHI CLICK VÀO Ô GIAO DIỆN
-    box.addEventListener('click', function() {
-        const targetUrl = GM_getValue('saved_link999', '');
-        if (!targetUrl) return;
+        const searchURL =
+            'https://www.google.com/search?q=' +
+            encodeURIComponent(url);
 
-        // Phát tín hiệu sang tất cả tab đang mở để đóng linkhuongdan.online
-        GM_setValue('close_huongdan_trigger', Date.now());
+        window.open(
+            searchURL,
+            '_blank',
+            'noopener,noreferrer'
+        );
+    }
 
-        // Nếu đang ở chính tab linkhuongdan.online thì chuyển hướng hoặc tự đóng
-        if (currentHost.includes('linkhuongdan.online')) {
-            window.open(targetUrl, '_blank');
-            window.close();
-        } else {
-            window.open(targetUrl, '_blank');
+    // ==============================
+    // HIEN THI KET QUA
+    // ==============================
+
+    function render() {
+
+        results.innerHTML = '';
+
+        foundLinks.forEach(url => {
+
+            const item = document.createElement('div');
+            item.className = 'lhd-item';
+
+            const link = document.createElement('a');
+
+            link.className = 'lhd-link';
+            link.textContent = '↗ ' + url;
+            link.href = '#';
+            link.title = 'Tìm kiếm trên Google';
+
+            link.onclick = function (e) {
+                e.preventDefault();
+                searchLink(url);
+            };
+
+            const hint = document.createElement('small');
+
+            hint.className = 'lhd-hint';
+            hint.textContent = '[ CLICK TO SEARCH GOOGLE ]';
+
+            item.append(link, hint);
+            results.appendChild(item);
+        });
+
+        status.textContent =
+            '> FOUND: ' + foundLinks.size + ' LINK(S)';
+    }
+
+    // ==============================
+    // CHO ANH TAI XONG
+    // ==============================
+
+    function waitForImage(img) {
+
+        return new Promise(resolve => {
+
+            if (img.complete && img.naturalWidth > 0) {
+                resolve(true);
+                return;
+            }
+
+            const timer = setTimeout(() => {
+                resolve(false);
+            }, 10000);
+
+            img.addEventListener('load', () => {
+                clearTimeout(timer);
+                resolve(true);
+            }, { once: true });
+
+            img.addEventListener('error', () => {
+                clearTimeout(timer);
+                resolve(false);
+            }, { once: true });
+
+        });
+    }
+
+    // ==============================
+    // QUET TAT CA ANH PHU HOP
+    // ==============================
+
+    async function scanTargetImages() {
+
+        if (busy) return;
+
+        busy = true;
+
+        foundLinks.clear();
+        results.innerHTML = '';
+
+        try {
+
+            status.textContent = '> FINDING ARTICLE IMAGES...';
+
+            const images = findTargetImages();
+
+            if (!images.length) {
+
+                status.textContent =
+                    '> NO WORDPRESS ARTICLE IMAGES FOUND';
+
+                return;
+            }
+
+            status.textContent =
+                '> FOUND ' + images.length + ' IMAGE(S)';
+
+            if (!worker) {
+
+                status.textContent = '> LOADING OCR ENGINE...';
+
+                worker = await Tesseract.createWorker('eng');
+            }
+
+            let scanned = 0;
+
+            for (const img of images) {
+
+                scanned++;
+
+                status.textContent =
+                    '> SCANNING IMAGE ' +
+                    scanned + '/' + images.length;
+
+                await waitForImage(img);
+
+                const imageURL = getImageURL(img);
+
+                if (!imageURL) continue;
+
+                try {
+
+                    const blob = await loadImage(imageURL);
+
+                    const result = await worker.recognize(blob);
+
+                    const text = result.data.text || '';
+
+                    extractURLs(text).forEach(value => {
+
+                        const url = normalizeURL(value);
+
+                        if (url) {
+                            foundLinks.add(url);
+                        }
+
+                    });
+
+                    // Cap nhat ket qua ngay sau moi anh
+                    render();
+
+                } catch (error) {
+
+                    console.warn(
+                        '[LHD] Cannot scan image:',
+                        imageURL,
+                        error
+                    );
+
+                }
+            }
+
+            render();
+
+            if (!foundLinks.size) {
+
+                status.textContent =
+                    '> SCAN COMPLETED - NO URL FOUND';
+
+            } else {
+
+                status.textContent =
+                    '> SCAN COMPLETED - FOUND ' +
+                    foundLinks.size + ' URL(S)';
+            }
+
+        } catch (error) {
+
+            console.error('[LHD Scanner]', error);
+
+            status.textContent =
+                '> ERROR: ' + error.message;
+
+        } finally {
+
+            busy = false;
         }
-    });
+    }
 
-    document.body.appendChild(box);
+    // ==============================
+    // NUT QUET LAI
+    // ==============================
+
+    document.getElementById('lhd-rescan').onclick =
+        scanTargetImages;
+
+    // ==============================
+    // KHOI DONG
+    // ==============================
+
+    if (document.readyState === 'loading') {
+
+        document.addEventListener(
+            'DOMContentLoaded',
+            scanTargetImages,
+            { once: true }
+        );
+
+    } else {
+
+        scanTargetImages();
+
+    }
+
 })();
