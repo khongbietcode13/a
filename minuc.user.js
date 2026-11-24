@@ -1,13 +1,11 @@
 // ==UserScript==
 // @name         Auto Mission, Auto Confirm & Limit - Minuc.vn
 // @namespace    http://tampermonkey.net/
-// @version      1.1
-// @description  Hiển thị lượt còn lại, phím tắt Alt+1..8, tự động bấm Thực Hiện (modal) và Xác Nhận (captcha) trên minuc.vn
+// @version      1.2
+// @description  Hiển thị lượt còn lại, phím tắt Alt+1..8, tự động bấm Thực Hiện, Xác Nhận và OK khi Thành công trên minuc.vn
 // @author       You
 // @match        https://minuc.vn/*
 // @match        https://*.minuc.vn/*
-// @downloadURL  https://raw.githubusercontent.com/khongbietcode13/a/main/minuc.user.js
-// @updateURL    https://raw.githubusercontent.com/khongbietcode13/a/main/minuc.user.js
 // @grant        none
 // @run-at       document-end
 // ==/UserScript==
@@ -28,13 +26,14 @@
     ];
 
     // ==========================================
-    // 1. TỰ ĐỘNG CLICK CÁC NÚT XÁC NHẬN (HÌNH 2 & TRANG XÁC NHẬN)
+    // 1. TỰ ĐỘNG CLICK CÁC NÚT XÁC NHẬN & OK THÀNH CÔNG
     // ==========================================
     let clickedModalGo = false;
     let clickedConfirmMission = false;
+    let clickedSuccessOk = false;
 
     function autoClickConfirmButtons() {
-        // A. Nút "Thực Hiện" trong popup Sẵn sàng thực hiện! (#cmm-btn-go) - Hình 2
+        // A. Nút "Thực Hiện" trong popup Sẵn sàng thực hiện! (#cmm-btn-go)
         const modal = document.getElementById('confirmMissionModal');
         const goBtn = document.getElementById('cmm-btn-go');
 
@@ -45,7 +44,6 @@
                 clickedModalGo = true;
                 setTimeout(() => {
                     goBtn.click();
-                    // Reset cờ sau 2s đề phòng mở lại modal khác
                     setTimeout(() => { clickedModalGo = false; }, 2000);
                 }, 150);
             }
@@ -53,7 +51,7 @@
             clickedModalGo = false;
         }
 
-        // B. Nút "Xác Nhận" ở trang confirm-mission (#confirmMissionBtn) - Hình mới
+        // B. Nút "Xác Nhận" ở trang confirm-mission (#confirmMissionBtn)
         const confirmBtn = document.getElementById('confirmMissionBtn');
         if (confirmBtn && !clickedConfirmMission) {
             const style = getComputedStyle(confirmBtn);
@@ -67,14 +65,32 @@
                 clickedConfirmMission = true;
                 setTimeout(() => {
                     confirmBtn.click();
-                    // Reset cờ sau 3s nếu trang chưa chuyển hướng (ví dụ nhập sai phép toán)
                     setTimeout(() => { clickedConfirmMission = false; }, 3000);
                 }, 100);
             }
         }
+
+        // C. Nút "OK" (button.swal2-confirm) khi hiện thông báo "Thành công!"
+        const swalPopup = document.querySelector('.swal2-popup');
+        const okBtn = document.querySelector('button.swal2-confirm');
+        if (swalPopup && okBtn && !clickedSuccessOk) {
+            const popupText = swalPopup.textContent || '';
+            const style = getComputedStyle(okBtn);
+            const isVisible = style.display !== 'none' && style.visibility !== 'hidden' && okBtn.offsetParent !== null;
+
+            if (isVisible && /thành công/i.test(popupText)) {
+                clickedSuccessOk = true;
+                setTimeout(() => {
+                    okBtn.click();
+                    setTimeout(() => { clickedSuccessOk = false; }, 2000);
+                }, 150);
+            }
+        } else if (!swalPopup) {
+            clickedSuccessOk = false;
+        }
     }
 
-    // Quét liên tục mỗi 150ms + theo dõi thay đổi DOM để bấm ngay khi nút mở khóa
+    // Quét liên tục mỗi 150ms + theo dõi thay đổi DOM
     setInterval(autoClickConfirmButtons, 150);
     const observer = new MutationObserver(autoClickConfirmButtons);
     if (document.body) {
@@ -85,7 +101,6 @@
     // 2. TẠO Ô HIỂN THỊ LƯỢT CÒN LẠI (CHỈ HIỆN Ở TRANG NHIỆM VỤ)
     // ==========================================
     function createLimitWidget() {
-        // Chỉ hiển thị bảng Limit khi trang có danh sách thẻ nhiệm vụ (.card.mission)
         if (!document.querySelector('.card.mission')) return;
         if (document.getElementById('minuc-limit-widget')) return;
 
@@ -171,7 +186,6 @@
         const claimBtn = card.querySelector('a.claim-mission');
         if (claimBtn) {
             claimBtn.click();
-            // Sau khi click, hàm autoClickConfirmButtons() ở mục 1 sẽ tự bắt được modal và bấm nút #cmm-btn-go
         }
     }
 
