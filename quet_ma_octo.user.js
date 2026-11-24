@@ -4,6 +4,8 @@
 // @version      1.0
 // @description  Lưu link999.app / link999.win góc trái trên cùng và tự đóng tab linkhuongdan.online khi click
 // @match        *://*/*
+// @downloadURL  https://raw.githubusercontent.com/khongbietcode13/a/main/quet_ma_octo.user.js
+// @updateURL    https://raw.githubusercontent.com/khongbietcode13/a/main/quet_ma_octo.user.js
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_deleteValue
